@@ -11,6 +11,12 @@ class Currency(models.Model):
     _inherit = "res.currency"
 
     @api.model
+    def _get_conversion_rate(self, from_currency, to_currency):
+        from_currency = from_currency.with_env(self.env)
+        to_currency = to_currency.with_env(self.env)
+        return to_currency.rate / from_currency.rate
+
+    @api.model
     def _get_conversion_rate(self, from_currency, to_currency, company, date):
         currency_rates = (from_currency + to_currency)._get_rates(company, date)
         res = currency_rates.get(to_currency.id) / currency_rates.get(from_currency.id)
