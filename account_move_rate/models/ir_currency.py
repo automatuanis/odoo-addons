@@ -10,6 +10,19 @@ _logger = logging.getLogger(__name__)
 class Currency(models.Model):
     _inherit = "res.currency"
 
+    def _get_rates(self, company, date):
+        query = """SELECT c.id,
+                          COALESCE((SELECT r.rate FROM res_currency_rate r
+                                  WHERE r.currency_id = c.id AND r.name <= %s
+                                    AND (r.company_id IS NULL OR r.company_id = %s)
+                               ORDER BY r.company_id, r.name DESC
+                                  LIMIT 1), 1.0) AS rate
+                   FROM res_currency c
+                   WHERE c.id IN %s"""
+        self._cr.execute(query, (date, company.id, tuple(self.ids)))
+        currency_rates = dict(self._cr.fetchall())
+        return currency_rates
+
     @api.model
     def _get_conversion_rate2(self, from_currency, to_currency, company, date):
         currency_rates = (from_currency + to_currency)._get_rates(company, date)
